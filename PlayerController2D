@@ -1,0 +1,123 @@
+using UnityEngine;
+
+public class PlayerController : MonoBehaviour
+{
+    public float moveSpeed = 5f; // Standart Speed
+    public float runMultiplier = 2f; // Multiplier For Run
+    public Animator animator;
+
+    public AudioSource audioSource; // Audio source for your footsteps
+    public AudioClip[] footstepSounds; // Your massive sounds (for random sounds while walking)
+    private float stepDelay = 0.5f; // StepSound delay
+    private float lastStepTime; // Last Step Time
+
+    public float walkAnimationSpeed = 1f; // Speed animation for walk
+    public float runAnimationSpeed = 1.4f; // Speed animation for run
+
+    private Vector2 lastMoveDirection; // Last move direction (for stop your animation)
+
+    private void Update()
+    {
+        // For movement. Get input wasd
+        float horizontal = Input.GetAxis("Horizontal");
+        float vertical = Input.GetAxis("Vertical");
+
+        // Values player speed
+        float speed = new Vector2(horizontal, vertical).sqrMagnitude;
+
+        // Running or not
+        bool isRunning = Input.GetKey(KeyCode.LeftShift);
+        float currentSpeed = moveSpeed;
+
+        if (isRunning)
+        {
+            currentSpeed *= runMultiplier;
+        }
+
+        // Maximal value for vertical & horizontal
+        if (Mathf.Abs(horizontal) < 0.1f)
+            horizontal = 0f;
+        if (Mathf.Abs(vertical) < 0.1f)
+            vertical = 0f;
+
+        // Move charater
+        Vector3 move = new Vector3(horizontal, vertical, 0) * currentSpeed * Time.deltaTime;
+        transform.Translate(move);
+
+        if (speed > 0.01f)
+        {
+            // Parameters for animator
+            animator.SetFloat("Horizontal", horizontal);
+            animator.SetFloat("Vertical", vertical);
+            animator.SetFloat("Speed", speed);
+
+            // Speed up or slow down the animation depending on whether the character is walking or running
+            if (isRunning)
+            {
+                animator.speed = runAnimationSpeed; // Ускоренная анимация для бега
+            }
+            else
+            {
+                animator.speed = walkAnimationSpeed; // Обычная скорость анимации для ходьбы
+            }
+
+            // Play Footstep Sound
+            if (Time.time > lastStepTime + stepDelay)
+            {
+                PlayFootstepSound();
+                lastStepTime = Time.time;
+            }
+
+            lastMoveDirection = new Vector2(horizontal, vertical);
+        }
+        else
+        {
+            // If the character does not move, turn him towards the cursor
+            animator.speed = 0f; // Freeze the animation on the current frame
+            HandleIdleRotation();
+        }
+    }
+
+    private void HandleIdleRotation()
+    {
+        Vector3 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        Vector2 directionToMouse = (mousePosition - transform.position).normalized;
+
+        // Determining the angle between the character and the cursor
+        float angle = Mathf.Atan2(directionToMouse.y, directionToMouse.x) * Mathf.Rad2Deg;
+
+        if (angle >= 45 && angle < 135)
+        {
+            animator.SetFloat("Horizontal", 0);
+            animator.SetFloat("Vertical", 1);  // Up
+        }
+        else if (angle >= -135 && angle < -45)
+        {
+            animator.SetFloat("Horizontal", 0);
+            animator.SetFloat("Vertical", -1);  // Down
+        }
+        else if (angle >= -45 && angle < 45)
+        {
+            animator.SetFloat("Horizontal", 1);
+            animator.SetFloat("Vertical", 0);  // Right
+        }
+        else
+        {
+            animator.SetFloat("Horizontal", -1);
+            animator.SetFloat("Vertical", 0);  // Left
+        }
+
+        animator.SetFloat("Speed", 0);  // Stop player
+    }
+
+    // Method for playing a random step sound
+    private void PlayFootstepSound()
+    {
+        if (footstepSounds.Length > 0)
+        {
+            int randomIndex = Random.Range(0, footstepSounds.Length);
+            AudioClip clip = footstepSounds[randomIndex];
+            audioSource.PlayOneShot(clip);
+        }
+    }
+}
