@@ -1,0 +1,16 @@
+using UnityEngine;
+
+public class ExitGameButton : MonoBehaviour
+{
+    // Method for exit the game
+    public void ExitGame()
+    {
+        // If game in Unity Editor, game not close
+        #if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+        #else
+        // If the game in build version
+        Application.Quit();
+        #endif
+    }
+}
