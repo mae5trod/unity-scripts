@@ -1,0 +1,26 @@
+using UnityEngine;
+using UnityEngine.UI;
+
+public class SoundVolume : MonoBehaviour
+{
+    public Slider volumeSlider;
+    public AudioSource audioSource;
+
+    private void Start()
+    {
+        // Load your volume
+        volumeSlider.value = PlayerPrefs.GetFloat("Volume", audioSource.volume);
+        SetVolume(volumeSlider.value);
+        
+        volumeSlider.onValueChanged.AddListener(SetVolume);
+    }
+
+    public void SetVolume(float volume)
+    {
+        if (audioSource != null)
+        {
+            audioSource.volume = volume;
+            PlayerPrefs.SetFloat("Volume", volume); // Saving sound volume
+        }
+    }
+}
