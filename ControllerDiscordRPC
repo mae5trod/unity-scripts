@@ -1,0 +1,94 @@
+using System;
+using UnityEngine;
+using Discord;
+using UnityEngine.SceneManagement;
+
+public class DiscordController : MonoBehaviour
+{
+    public Discord.Discord discord;
+    private long applicationID = 123456789101112; // Discord App ID
+
+    void Start()
+    {
+        // Initialized Discord with Application ID
+        discord = new Discord.Discord(applicationID, (UInt64)Discord.CreateFlags.Default);
+
+        // Setting the standart activity (main menu)
+        UpdateDiscordActivity("Menu", "PlayerName");
+
+        // We using scene change event
+        SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    void Update()
+    {
+        // Discord Callback update
+        discord.RunCallbacks();
+    }
+
+    private void OnApplicationQuit()
+    {
+        // Clearing resources upon exit
+        discord.Dispose();
+    }
+
+    // DiscordActivity Update
+    public void UpdateDiscordActivity(string sceneName, string imageKey)
+    {
+        var activityManager = discord.GetActivityManager();
+
+        var activity = new Discord.Activity
+        {
+            State = "In " + sceneName, // Статус
+            Details = "Researching the map", // Описание
+            Timestamps =
+            {
+                Start = DateTimeOffset.Now.ToUnixTimeSeconds()
+            },
+            Assets =
+            {
+                LargeImage = imageKey, // Ключ картинки для большой иконки
+                LargeText = "Research: " + sceneName // Текст при наведении
+            }
+        };
+
+        activityManager.UpdateActivity(activity, result =>
+        {
+            if (result == Discord.Result.Ok)
+            {
+                Debug.Log("Discord RPC was updated: " + sceneName);
+            }
+            else
+            {
+                Debug.LogError("Error updating Discord RPC: " + result);
+            }
+        });
+    }
+
+    // Scene change event handler
+    void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        // Update the activity depending on the loaded scene
+        UpdateDiscordActivity(scene.name, GetImageKey(scene.name));
+    }
+
+    // Function to get image key by scene name
+    private string GetImageKey(string sceneName)
+    {
+        // Linking the scene name to the image key
+        switch (sceneName)
+        {
+            case "Scene1":
+                return "Scene1"; // Key for Scene1
+            case "Menu":
+                return "Menu"; // Key for MainMenu
+            // Placeholders for your scenes
+            case "Scene2":
+                return "desert_image_key"; // Key for Scene2
+            case "Scene3":
+                return "city_image_key"; // Key for Scene3
+            default:
+                return "default"; // Key for default
+        }
+    }
+}
