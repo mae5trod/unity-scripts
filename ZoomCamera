@@ -1,0 +1,76 @@
+using UnityEngine;
+
+public class CameraZoom : MonoBehaviour
+{
+    public float zoomSpeed = 1f; // Speed for ZoomSound
+    public float minZoom = 1.5f; // Minimal value for zoom (maximum camera approximation)
+    public float maxZoom = 2f; // Maximal value for zoom (maximum camera distance)
+    public AudioSource zoomSound; // Audio for zoom
+
+    private Camera cam; // Your camera
+
+    private void Start()
+    {
+        // Get camera
+        cam = GetComponent<Camera>();
+
+        if (zoomSound != null)
+        {
+            zoomSound.loop = true; // ZoomSoundLoop
+        }
+
+        // Set the initial value of the camera's orthographic zoom (if required)
+        cam.orthographicSize = Mathf.Clamp(cam.orthographicSize, minZoom, maxZoom);
+    }
+
+    private void Update()
+    {
+        // Scrool mouse with Ctrl
+        if (Input.GetKey(KeyCode.LeftControl))
+        {
+            float scroll = Input.GetAxis("Mouse ScrollWheel");
+            if (scroll != 0f)
+            {
+                ZoomCamera(-scroll * zoomSpeed); // Zoom depending on wheel spin
+            }
+        }
+
+        // Zoom via + and - keys
+        if (Input.GetKey(KeyCode.Equals)) // Key +
+        {
+            ZoomCamera(-zoomSpeed * Time.deltaTime); // Increas zoom
+        }
+        else if (Input.GetKey(KeyCode.Minus)) // Key -
+        {
+            ZoomCamera(zoomSpeed * Time.deltaTime); // Decreas zoom
+        }
+
+        // StopSound if not zoom
+        if (zoomSound != null && !IsZooming())
+        {
+            zoomSound.Stop();
+        }
+    }
+
+    private void ZoomCamera(float increment)
+    {
+        if (cam != null)
+        {
+            // Zoom limit for minZoom and maxZoom
+            float newZoom = Mathf.Clamp(cam.orthographicSize + increment, minZoom, maxZoom);
+            cam.orthographicSize = newZoom;
+
+            // If no sound, play it!
+            if (zoomSound != null && !zoomSound.isPlaying)
+            {
+                zoomSound.Play();
+            }
+        }
+    }
+
+    private bool IsZooming()
+    {
+        // Test for sound
+        return Input.GetAxis("Mouse ScrollWheel") != 0 || Input.GetKey(KeyCode.Equals) || Input.GetKey(KeyCode.Minus);
+    }
+}
